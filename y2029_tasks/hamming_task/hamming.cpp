@@ -11,11 +11,7 @@ bool isPowerOfTwo(int num) {
     return true;
 }
 
-void encode() {
-    int m, n;
-    std::string bits;
-    std::cin >> m >> n >> bits;
-    
+void encode(int m, int n, std::string bits) {
     if (bits.length() != m) {
         return;
     }
@@ -51,11 +47,7 @@ void encode() {
     std::cout << result << std::endl;
 }
 
-void decode() {
-    int n;
-    std::string bits;
-    std::cin >> n >> bits;
-    
+void decode(int n, std::string bits) {
     if (bits.length() != n) {
         return;
     }
@@ -101,11 +93,7 @@ void decode() {
     std::cout << data_bits << std::endl;
 }
 
-void is_valid() {
-    int n;
-    std::string bits;
-    std::cin >> n >> bits;
-    
+void is_valid(int n, std::string bits) {
     if (bits.length() != n) {
         return;
     }
@@ -142,11 +130,29 @@ int main(int argc, char* argv[]) {
     std::string command = argv[1];
     
     if (command == "encode") {
-        encode();
-    } else if (command == "decode") {
-        decode();
-    } else if (command == "is_valid") {
-        is_valid();
+        if (argc != 5) {
+            return 1;
+        }
+        int m = std::stoi(argv[2]);
+        int n = std::stoi(argv[3]);
+        std::string bits = argv[4];
+        encode(m, n, bits);
+    } 
+    else if (command == "decode") {
+        if (argc != 4) {
+            return 1;
+        }
+        int n = std::stoi(argv[2]);
+        std::string bits = argv[3];
+        decode(n, bits);
+    }
+    else if (command == "is_valid") {
+        if (argc != 4) {
+            return 1;
+        }
+        int n = std::stoi(argv[2]);
+        std::string bits = argv[3];
+        is_valid(n, bits);
     }
     
     return 0;
