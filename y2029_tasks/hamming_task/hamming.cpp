@@ -2,97 +2,117 @@
 #include <string>
 #include <vector>
 
-int parityCount(int m) {
-    int r = 0;
-    while ((1 << r) < m + r + 1)
-        r++;
-    return r;
+bool isPowerOfTwo(int x) {
+    return x > 0 && (x & (x - 1)) == 0;
 }
 
-void encode(int m, int n, std::string data) {
-    int r = parityCount(m);
-    std::vector<int> p(r, 0);
-
-    for (int i = 0; i < r; i++) {
-        int sum = 0;
-        for (int j = 0; j < m; j++) {
-            if (((j + 1) >> i) % 2 == 1)
-                sum += (data[j] == '1');
+void encode(int m, int n, std::string bits) {
+    std::vector<int> code(n, 0);
+    
+    int idx = 0;
+    for (int i = 0; i < n; i++) {
+        if (!isPowerOfTwo(i + 1)) {
+            if (idx < m) {
+                code[i] = bits[idx] - '0';
+                idx++;
+            }
         }
-        p[i] = sum % 2;
     }
-
-    std::cout << data;
-    for (int i = 0; i < r; i++)
-        std::cout << p[i];
-    std::cout << '\n';
+    
+    for (int i = 0; i < n; i++) {
+        if (isPowerOfTwo(i + 1)) {
+            int parity = 0;
+            for (int j = 0; j < n; j++) {
+                if (((j + 1) & (i + 1)) != 0) {
+                    parity ^= code[j];
+                }
+            }
+            code[i] = parity;
+        }
+    }
+    
+    for (int i = 0; i < n; i++) {
+        std::cout << code[i];
+    }
+    std::cout << std::endl;
 }
 
-void decode(int n, std::string code) {
-    int r = 0;
-    while ((1 << r) < n + 1)
-        r++;
-
-    int m = n - r;
-
-    std::string data = code.substr(0, m);
-    std::string p = code.substr(m, r);
-
+void decode(int n, std::string bits) {
+    std::vector<int> code(n);
+    for (int i = 0; i < n; i++) {
+        code[i] = bits[i] - '0';
+    }
+    
     int error = 0;
-
-    for (int i = 0; i < r; i++) {
-        int sum = 0;
-        for (int j = 0; j < m; j++) {
-            if (((j + 1) >> i) % 2 == 1)
-                sum += (data[j] == '1');
+    for (int i = 0; i < n; i++) {
+        if (isPowerOfTwo(i + 1)) {
+            int parity = 0;
+            for (int j = 0; j < n; j++) {
+                if (((j + 1) & (i + 1)) != 0) {
+                    parity ^= code[j];
+                }
+            }
+            if (parity) {
+                error += (i + 1);
+            }
         }
-        if ((sum % 2) != (p[i] == '1'))
-            error += (1 << i);
     }
-
-    if (error >= 1 && error <= m) {
-        data[error - 1] =
-            (data[error - 1] == '1' ? '0' : '1');
+    
+    if (error > 0 && error <= n) {
+        code[error - 1] ^= 1;
     }
-
-    std::cout << r << '\n';
-    std::cout << data << '\n';
+    
+    std::string result;
+    int r = 0;
+    for (int i = 0; i < n; i++) {
+        if (!isPowerOfTwo(i + 1)) {
+            result += (code[i] + '0');
+        } else {
+            r++;
+        }
+    }
+    
+    std::cout << r << std::endl;
+    std::cout << result << std::endl;
 }
 
-void isValid(int n, std::string code) {
-    int r = 0;
-    while ((1 << r) < n + 1)
-        r++;
-
-    int m = n - r;
-
-    std::string data = code.substr(0, m);
-    std::string p = code.substr(m, r);
-
-    for (int i = 0; i < r; i++) {
-        int sum = 0;
-        for (int j = 0; j < m; j++) {
-            if (((j + 1) >> i) % 2 == 1)
-                sum += (data[j] == '1');
-        }
-        if ((sum % 2) != (p[i] == '1')) {
-            std::cout << 0 << '\n';
-            return;
+void is_valid(int n, std::string bits) {
+    std::vector<int> code(n);
+    for (int i = 0; i < n; i++) {
+        code[i] = bits[i] - '0';
+    }
+    
+    bool valid = true;
+    for (int i = 0; i < n; i++) {
+        if (isPowerOfTwo(i + 1)) {
+            int parity = 0;
+            for (int j = 0; j < n; j++) {
+                if (((j + 1) & (i + 1)) != 0) {
+                    parity ^= code[j];
+                }
+            }
+            if (parity) {
+                valid = false;
+                break;
+            }
         }
     }
-
-    std::cout << 1 << '\n';
+    
+    std::cout << (valid ? "1" : "0") << std::endl;
 }
 
 int main(int argc, char* argv[]) {
     std::string cmd = argv[1];
-
-    if (cmd == "encode")
+    
+    if (cmd == "encode") {
         encode(std::stoi(argv[2]), std::stoi(argv[3]), argv[4]);
-    else if (cmd == "decode")
+    }
+    else if (cmd == "decode") {
         decode(std::stoi(argv[2]), argv[3]);
-    else
-        isValid(std::stoi(argv[2]), argv[3]);
-
+    }
+    else if (cmd == "is_valid") {
+        is_valid(std::stoi(argv[2]), argv[3]);
+    }
+    
     return 0;
 }
