@@ -1,117 +1,163 @@
 #include <iostream>
 #include <string>
-#include <vector>
 
-bool isPowerOfTwo(int x) {
-    return x > 0 && (x & (x - 1)) == 0;
+bool checkPowerTwo(int x) {
+    int y = 1;
+    while (y < x) {
+        y = y * 2;
+    }
+    return y == x;
 }
 
-void encode(int m, int n, std::string bits) {
-    std::vector<int> code(n, 0);
+std::string makeCode(int m, int n, std::string data) {
+    if (data.length() != m) {
+        return "";
+    }
     
-    int idx = 0;
-    for (int i = 0; i < n; i++) {
-        if (!isPowerOfTwo(i + 1)) {
-            if (idx < m) {
-                code[i] = bits[idx] - '0';
-                idx++;
-            }
+    std::string code(n, '0');
+    int pos = 0;
+    
+    for (int i = 1; i <= n; i++) {
+        if (!checkPowerTwo(i)) {
+            code[i-1] = data[pos];
+            pos++;
         }
     }
     
-    for (int i = 0; i < n; i++) {
-        if (isPowerOfTwo(i + 1)) {
-            int parity = 0;
-            for (int j = 0; j < n; j++) {
-                if (((j + 1) & (i + 1)) != 0) {
-                    parity ^= code[j];
+    for (int p = 1; p <= n; p = p * 2) {
+        if (p > n) break;
+        
+        int sum = 0;
+        for (int i = 1; i <= n; i++) {
+            if (i == p) continue;
+            if ((i & p) != 0) {
+                if (code[i-1] == '1') {
+                    sum = sum + 1;
                 }
             }
-            code[i] = parity;
         }
-    }
-    
-    for (int i = 0; i < n; i++) {
-        std::cout << code[i];
-    }
-    std::cout << std::endl;
-}
-
-void decode(int n, std::string bits) {
-    std::vector<int> code(n);
-    for (int i = 0; i < n; i++) {
-        code[i] = bits[i] - '0';
-    }
-    
-    int error = 0;
-    for (int i = 0; i < n; i++) {
-        if (isPowerOfTwo(i + 1)) {
-            int parity = 0;
-            for (int j = 0; j < n; j++) {
-                if (((j + 1) & (i + 1)) != 0) {
-                    parity ^= code[j];
-                }
-            }
-            if (parity) {
-                error += (i + 1);
-            }
-        }
-    }
-    
-    if (error > 0 && error <= n) {
-        code[error - 1] ^= 1;
-    }
-    
-    std::string result;
-    int r = 0;
-    for (int i = 0; i < n; i++) {
-        if (!isPowerOfTwo(i + 1)) {
-            result += (code[i] + '0');
+        
+        if (sum % 2 == 1) {
+            code[p-1] = '1';
         } else {
-            r++;
+            code[p-1] = '0';
         }
     }
     
-    std::cout << r << std::endl;
-    std::cout << result << std::endl;
+    return code;
 }
 
-void is_valid(int n, std::string bits) {
-    std::vector<int> code(n);
-    for (int i = 0; i < n; i++) {
-        code[i] = bits[i] - '0';
+void readCode(int n, std::string code) {
+    if (code.length() != n) {
+        return;
     }
     
-    bool valid = true;
-    for (int i = 0; i < n; i++) {
-        if (isPowerOfTwo(i + 1)) {
-            int parity = 0;
-            for (int j = 0; j < n; j++) {
-                if (((j + 1) & (i + 1)) != 0) {
-                    parity ^= code[j];
+    int wrong = 0;
+    
+    for (int p = 1; p <= n; p = p * 2) {
+        if (p > n) break;
+        
+        int sum = 0;
+        for (int i = 1; i <= n; i++) {
+            if ((i & p) != 0) {
+                if (code[i-1] == '1') {
+                    sum = sum + 1;
                 }
             }
-            if (parity) {
-                valid = false;
-                break;
-            }
+        }
+        
+        if (sum % 2 == 1) {
+            wrong = wrong + p;
         }
     }
     
-    std::cout << (valid ? "1" : "0") << std::endl;
+    std::string fixed = code;
+    if (wrong > 0 && wrong <= n) {
+        if (fixed[wrong-1] == '0') {
+            fixed[wrong-1] = '1';
+        } else {
+            fixed[wrong-1] = '0';
+        }
+    }
+    
+    std::string data = "";
+    for (int i = 1; i <= n; i++) {
+        if (!checkPowerTwo(i)) {
+            data = data + fixed[i-1];
+        }
+    }
+    
+    int check = 0;
+    for (int p = 1; p <= n; p = p * 2) {
+        if (p > n) break;
+        check++;
+    }
+    
+    std::cout << check << std::endl;
+    std::cout << data << std::endl;
+}
+
+void checkCode(int n, std::string code) {
+    if (code.length() != n) {
+        std::cout << "0" << std::endl;
+        return;
+    }
+    
+    int good = 1;
+    
+    for (int p = 1; p <= n; p = p * 2) {
+        if (p > n) break;
+        
+        int sum = 0;
+        for (int i = 1; i <= n; i++) {
+            if ((i & p) != 0) {
+                if (code[i-1] == '1') {
+                    sum = sum + 1;
+                }
+            }
+        }
+        
+        if (sum % 2 == 1) {
+            good = 0;
+            break;
+        }
+    }
+    
+    std::cout << good << std::endl;
 }
 
 int main(int argc, char* argv[]) {
-    std::string cmd = argv[1];
+    if (argc < 2) {
+        return 1;
+    }
     
-    if (cmd == "encode") {
-        encode(std::stoi(argv[2]), std::stoi(argv[3]), argv[4]);
+    std::string what = argv[1];
+    
+    if (what == "encode") {
+        if (argc != 5) {
+            return 1;
+        }
+        int m = std::stoi(argv[2]);
+        int n = std::stoi(argv[3]);
+        std::string data = argv[4];
+        std::string code = makeCode(m, n, data);
+        std::cout << code << std::endl;
     }
-    else if (cmd == "decode") {
-        decode(std::stoi(argv[2]), argv[3]);
+    else if (what == "decode") {
+        if (argc != 4) {
+            return 1;
+        }
+        int n = std::stoi(argv[2]);
+        std::string code = argv[3];
+        readCode(n, code);
     }
-    else if (cmd == "is_valid") {
-        is_valid(std::stoi(argv[2]), argv[3]);
+    else if (what == "is_valid") {
+        if (argc != 4) {
+            return 1;
+        }
+        int n = std::stoi(argv[2]);
+        std::string code = argv[3];
+        checkCode(n, code);
     }
     
     return 0;
