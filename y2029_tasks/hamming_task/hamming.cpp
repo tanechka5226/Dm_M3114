@@ -1,129 +1,151 @@
+#include <cmath>
 #include <iostream>
 #include <string>
 
 bool checkPowerTwo(int x) {
-    int y = 1;
-    while (y < x) {
-        y = y * 2;
+    if (x <= 0) {
+        return false;
     }
-    return y == x;
+    return (x & (x - 1)) == 0;
 }
 
-std::string makeCode(int m, int n, std::string data) {
-    if (data.length() != m) {
+std::string makeCode(int m, int n, const std::string& data) {
+    if (data.length() != static_cast<size_t>(m)) {
+        return "";
+    }
+    
+    int r = 0;
+    while ((1 << r) < n + 1) {
+        r++;
+    }
+    
+    if (n != m + r) {
         return "";
     }
     
     std::string code(n, '0');
-    int pos = 0;
+    int data_pos = 0;
     
-    for (int i = 1; i <= n; i++) {
+    for (int i = 1; i <= n; ++i) {
         if (!checkPowerTwo(i)) {
-            code[i-1] = data[pos];
-            pos++;
+            code[i - 1] = data[data_pos];
+            data_pos++;
         }
     }
     
-    for (int p = 1; p <= n; p = p * 2) {
-        if (p > n) break;
-        
+    for (int p = 1; p <= n; p <<= 1) {
         int sum = 0;
-        for (int i = 1; i <= n; i++) {
-            if (i == p) continue;
-            if ((i & p) != 0) {
-                if (code[i-1] == '1') {
-                    sum = sum + 1;
+        
+        for (int i = 1; i <= n; ++i) {
+            if (i & p) {
+                if (code[i - 1] == '1') {
+                    sum++;
                 }
             }
         }
         
         if (sum % 2 == 1) {
-            code[p-1] = '1';
+            code[p - 1] = '1';
         } else {
-            code[p-1] = '0';
+            code[p - 1] = '0';
         }
     }
     
     return code;
 }
 
-void readCode(int n, std::string code) {
-    if (code.length() != n) {
+void readCode(int n, const std::string& code) {
+    if (code.length() != static_cast<size_t>(n)) {
         return;
     }
     
-    int wrong = 0;
+    int syndrome = 0;
     
-    for (int p = 1; p <= n; p = p * 2) {
-        if (p > n) break;
-        
+    for (int p = 1; p <= n; p <<= 1) {
         int sum = 0;
-        for (int i = 1; i <= n; i++) {
-            if ((i & p) != 0) {
-                if (code[i-1] == '1') {
-                    sum = sum + 1;
+        
+        for (int i = 1; i <= n; ++i) {
+            if (i & p) {
+                if (code[i - 1] == '1') {
+                    sum++;
                 }
             }
         }
         
         if (sum % 2 == 1) {
-            wrong = wrong + p;
+            syndrome += p;
         }
     }
     
     std::string fixed = code;
-    if (wrong > 0 && wrong <= n) {
-        if (fixed[wrong-1] == '0') {
-            fixed[wrong-1] = '1';
+    
+    if (syndrome > 0 && syndrome <= n) {
+        if (fixed[syndrome - 1] == '0') {
+            fixed[syndrome - 1] = '1';
         } else {
-            fixed[wrong-1] = '0';
+            fixed[syndrome - 1] = '0';
         }
     }
     
-    std::string data = "";
-    for (int i = 1; i <= n; i++) {
+    std::string data;
+    for (int i = 1; i <= n; ++i) {
         if (!checkPowerTwo(i)) {
-            data = data + fixed[i-1];
+            data += fixed[i - 1];
         }
     }
     
-    int check = 0;
-    for (int p = 1; p <= n; p = p * 2) {
-        if (p > n) break;
-        check++;
+    int check_bits = 0;
+    while ((1 << check_bits) < n + 1) {
+        check_bits++;
     }
     
-    std::cout << check << std::endl;
-    std::cout << data << std::endl;
+    std::cout << check_bits << "\n";
+    std::cout << data << "\n";
 }
 
-void checkCode(int n, std::string code) {
-    if (code.length() != n) {
-        std::cout << "0" << std::endl;
+void checkCode(int n, const std::string& code) {
+    if (code.length() != static_cast<size_t>(n)) {
+        std::cout << "0\n";
         return;
     }
     
-    int good = 1;
+    bool is_valid = true;
     
-    for (int p = 1; p <= n; p = p * 2) {
-        if (p > n) break;
+    for (int p = 1; p <= n; p <<= 1) {
+        if (!is_valid) {
+            break;
+        }
         
         int sum = 0;
-        for (int i = 1; i <= n; i++) {
-            if ((i & p) != 0) {
-                if (code[i-1] == '1') {
-                    sum = sum + 1;
+        
+        for (int i = 1; i <= n; ++i) {
+            if (i & p) {
+                if (code[i - 1] == '1') {
+                    sum++;
                 }
             }
         }
         
         if (sum % 2 == 1) {
-            good = 0;
-            break;
+            is_valid = false;
         }
     }
     
-    std::cout << good << std::endl;
+    if (is_valid) {
+        std::cout << "1\n";
+    } else {
+        std::cout << "0\n";
+    }
+}
+
+bool validateBinaryString(const std::string& str) {
+    for (size_t i = 0; i < str.length(); ++i) {
+        char c = str[i];
+        if (c != '0' && c != '1') {
+            return false;
+        }
+    }
+    return true;
 }
 
 int main(int argc, char* argv[]) {
@@ -131,33 +153,70 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    std::string what = argv[1];
+    std::string command = argv[1];
     
-    if (what == "encode") {
+    if (command == "encode") {
         if (argc != 5) {
             return 1;
         }
+        
         int m = std::stoi(argv[2]);
         int n = std::stoi(argv[3]);
         std::string data = argv[4];
+        
+        if (!validateBinaryString(data)) {
+            return 1;
+        }
+        
+        if (m <= 0 || n <= 0) {
+            return 1;
+        }
+        
         std::string code = makeCode(m, n, data);
-        std::cout << code << std::endl;
+        if (code.empty()) {
+            return 1;
+        }
+        
+        std::cout << code << "\n";
     }
-    else if (what == "decode") {
+    else if (command == "decode") {
         if (argc != 4) {
             return 1;
         }
+        
         int n = std::stoi(argv[2]);
         std::string code = argv[3];
+        
+        if (!validateBinaryString(code)) {
+            return 1;
+        }
+        
+        if (n <= 0) {
+            return 1;
+        }
+        
         readCode(n, code);
     }
-    else if (what == "is_valid") {
+    else if (command == "is_valid") {
         if (argc != 4) {
             return 1;
         }
+        
         int n = std::stoi(argv[2]);
         std::string code = argv[3];
+        
+        if (!validateBinaryString(code)) {
+            return 1;
+        }
+        
+        if (n <= 0) {
+            return 1;
+        }
+        
         checkCode(n, code);
+    }
+    else {
+        return 1;
     }
     
     return 0;
